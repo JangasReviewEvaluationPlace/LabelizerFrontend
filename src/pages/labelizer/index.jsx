@@ -8,6 +8,7 @@ export default function Labelizer() {
   const {sources, tags} = queryString.parse(window.location.search)
   const [checkedSources, setCheckedSources] = React.useState([]);
   const [checkedTags, setCheckedTags] = React.useState([]);
+  const [checkedIntentions, setCheckedIntentions] = React.useState([]);
 
   return (
     <div>
@@ -18,6 +19,8 @@ export default function Labelizer() {
             setCheckedSources={setCheckedSources}
             checkedTags={checkedTags}
             setCheckedTags={setCheckedTags}
+            checkedIntentions={checkedIntentions}
+            setCheckedIntentions={setCheckedIntentions}
           /> : <Labeling/>
       }
     </div>

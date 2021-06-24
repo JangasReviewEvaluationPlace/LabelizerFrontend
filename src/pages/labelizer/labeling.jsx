@@ -1,5 +1,8 @@
 import React from 'react'
-import { axios_ } from '../../components/baseRequest';
+import { FetchLabelizerData } from '../../api/fetch';
+import { TextData, Statistics, Label } from '../../api/models';
+
+import StatisticTable from './labelingComponents/statistics';
 
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
@@ -13,11 +16,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableRow from '@material-ui/core/TableRow';
+
 
 function copyArray(arr){
   var resultArr = []
@@ -28,29 +27,37 @@ function copyArray(arr){
 }
 
 export default function Labeling(props) {
-  const [data, setData] = React.useState([])
+  const [data, setData] = React.useState(new TextData("", "", ""))
+  const [statistics, setStatistics] = React.useState(new Statistics(0, 0, 0))
   const [tags, setTags] = React.useState([])
-  const [statistics, setStatistics] = React.useState([])
   const [selectedLabels, setSelectedLabels] = React.useState([])
 
-  const getNextData = async () => {
-    const dataResponse = await axios_.get(`/labelizer/label${window.location.search}`)
-    setSelectedLabels([]);
-    setData(dataResponse.data);
-
-    const statisticResponse = await axios_.get(`/labelizer/statistics${window.location.search}`)
-    setStatistics(statisticResponse.data);
-  }
-
   React.useEffect(() => {
-    const getTags = async () => {
-      const tagResponse = await axios_.get(`/labelizer/tags${window.location.search}`)
-      setTags(tagResponse.data)
+    const load = async () => {
+      await getNextData();
+      await loadTags();
     }
-    getNextData();
-    getTags();
+    load()
   }, [])
 
+  const loadTags = async () => {
+    const tags = await FetchLabelizerData.getTags();
+    setTags(tags);
+  }
+
+  const getNextData = async () => {
+    setSelectedLabels([]);
+    const labels = await FetchLabelizerData.getNextTextData();
+    const statistics = await FetchLabelizerData.getStatistics();
+    setData(labels);
+    setStatistics(statistics);
+  }
+
+  const onApply = async () => {
+    const label = new Label(selectedLabels, data)
+    await FetchLabelizerData.postLabeledData(label);
+    await getNextData();
+  }
 
   function handleChange(e, id){
     var checkedValues = selectedLabels;
@@ -62,17 +69,6 @@ export default function Labeling(props) {
       checkedValues.push(id)
     }
     setSelectedLabels(copyArray(checkedValues));
-  }
-
-  const onApply = async () => {
-    const url = `/labelizer/label${window.location.search}`
-    const payload = {
-      source: data.source,
-      id: data.id,
-      tags: selectedLabels
-    }
-    await axios_.post(url, payload)
-    await getNextData()
   }
 
   return (
@@ -122,39 +118,7 @@ export default function Labeling(props) {
         Apply
       </Button>
       <Divider style={{marginTop: "8px"}}/>
-      <Typography variant="h6" gutterBottom>
-        Statistics
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table aria-label="statistics">
-          <TableBody>
-            <TableRow>
-              <TableCell component="th" scope="row">
-                Total data-count for selection
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {statistics.text_data}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell component="th" scope="row">
-                Already Labeled
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {statistics.already_labeled}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell component="th" scope="row">
-                Labels with Selection
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {statistics.matches}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <StatisticTable statistics={statistics} />
     </>
   )
 }

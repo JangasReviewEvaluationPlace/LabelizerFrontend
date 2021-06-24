@@ -1,6 +1,7 @@
 import React from 'react';
-import { axios_ } from '../../components/baseRequest';
 import { useHistory } from "react-router-dom";
+
+import { FetchLabelizerData } from '../../api/fetch';
 
 import Choices from './funnelComponents/choices.jsx';
 
@@ -31,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function getSteps() {
-  return ['Select Source', 'Select Tags', 'Start Labeling'];
+  return ['Select Source', 'Select Tags', 'Select Intentions', 'Start Labeling'];
 }
 
 function DisplayedStepContent(props) {
@@ -40,27 +41,46 @@ function DisplayedStepContent(props) {
     checkedSources,
     setCheckedSources,
     checkedTags,
-    setCheckedTags
+    setCheckedTags,
+    checkedIntentions,
+    setCheckedIntentions
   } = props;
   const [sources, setSources] = React.useState([]);
   const [tags, setTags] = React.useState([]);
+  const [intentions, setIntentions] = React.useState([]);
 
   React.useEffect(() => {
-    const loadSources = async () => {
-      const source_response = await axios_.get('/labelizer/sources');
-      setSources(source_response.data)
+    const load = async (step) => {
+      switch (step) {
+        case 1:
+          await loadTags()
+          break;
+        case 2:
+          await loadIntentions()
+          break;
+        default:
+          await loadSources()
+          break;
+      }
     }
-    const loadTags = async () => {
-      const tag_response = await axios_.get('/labelizer/tags');
-      setTags(tag_response.data)
-    }
-    if (sources.length === 0 && step === 0){
-      loadSources()
-    }
-    if (tags.length === 0 && step === 1){
-      loadTags()
-    }
-  }, [sources, tags, step])
+
+    load(step);
+  }, [step])
+
+  const loadSources = async () => {
+    const sources = await FetchLabelizerData.getAllSources();
+    setSources(sources);
+  }
+
+  const loadTags = async () => {
+    const tags = await FetchLabelizerData.getTags();
+    setTags(tags);
+  }
+
+  const loadIntentions = async () => {
+    const intentions = await FetchLabelizerData.getAllIntentions();
+    setIntentions(intentions);
+  }
 
   switch (step) {
     case 0:
@@ -75,7 +95,13 @@ function DisplayedStepContent(props) {
         checked={checkedTags}
         setChecked={setCheckedTags}
       />;
-    case 2:
+      case 2:
+        return <Choices
+          choices={intentions}
+          checked={checkedIntentions}
+          setChecked={setCheckedIntentions}
+        />;
+    case 3:
       return `Cool - settings correct?! Let's start!`;
     default:
       return 'Unknown step';
@@ -87,7 +113,9 @@ export default function VerticalLinearStepper(props) {
     checkedSources,
     setCheckedSources,
     checkedTags,
-    setCheckedTags
+    setCheckedTags,
+    checkedIntentions,
+    setCheckedIntentions
   } = props;
   const classes = useStyles();
   const [activeStep, setActiveStep] = React.useState(0);
@@ -97,9 +125,10 @@ export default function VerticalLinearStepper(props) {
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
     if (activeStep + 1 === steps.length) {
-      const sources = checkedSources.map(source => `sources=${source}`)
-      const tags = checkedTags.map(tag => `tags=${tag}`)
-      history.push(`/labelizer?${sources.join("&")}&${tags.join("&")}`)
+      const sources = checkedSources.map(source => `sources=${source}`);
+      const tags = checkedTags.map(tag => `tags=${tag}`);
+      const intentions = checkedIntentions.map(intention => `intentions=${intention}`);
+      history.push(`/labelizer?${sources.join("&")}&${tags.join("&")}&${intentions.join("&")}`);
     }
   };
 
@@ -124,6 +153,8 @@ export default function VerticalLinearStepper(props) {
                 setCheckedSources={setCheckedSources}
                 checkedTags={checkedTags}
                 setCheckedTags={setCheckedTags}
+                checkedIntentions={checkedIntentions}
+                setCheckedIntentions={setCheckedIntentions}
               />
               <div className={classes.actionsContainer}>
                 <div>

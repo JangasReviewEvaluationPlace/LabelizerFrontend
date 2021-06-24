@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route } from "react-router-dom";
-import { axios_ } from "./components/baseRequest";
+import { FetchLabelizerData } from './api/fetch';
 import Base from './components/base/index.jsx';
 
 import Authentication from './pages/authentication/index.jsx';
@@ -33,7 +33,7 @@ function DisplayedComponent(props){
   React.useEffect(() => {
     const basicAuth = async () => {
       try {
-        await axios_.get("/labelizer/");
+        await FetchLabelizerData.verifyToken();
         setIsAuthenticated(true);
       } catch (err) {
         console.log(err)

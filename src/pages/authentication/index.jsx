@@ -1,5 +1,6 @@
 import React from 'react';
-import axios from 'axios';
+
+import { FetchAuth } from '../../api/fetch';
 
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
@@ -18,9 +19,7 @@ export default function Authentication() {
   const authSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/authentication",
-        authData, {withCredentials: true})
+      await FetchAuth.postAuthentication(authData.email, authData.password);
       window.location.reload();
     }
     catch (err) {
