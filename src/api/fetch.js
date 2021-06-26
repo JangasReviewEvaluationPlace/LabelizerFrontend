@@ -11,7 +11,7 @@ import {
 export class FetchAuth {
   static axios_ = axios.create({
     withCredentials: true,
-    baseURL: 'http://localhost:5000/api/auth'
+    baseURL: `${process.env.REACT_APP_API_URL}/auth`
   })
 
   /**
@@ -30,7 +30,7 @@ export class FetchAuth {
 export class FetchLabelizerData {
   static axios_ = axios.create({
     withCredentials: true,
-    baseURL: 'http://localhost:5000/api/labelizer'
+    baseURL: `${process.env.REACT_APP_API_URL}/labelizer`
   })
 
   static async verifyToken(){
